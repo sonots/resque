@@ -425,7 +425,7 @@ module Resque
     # Schedule this worker for shutdown. Will finish processing the
     # current job.
     def shutdown
-      log_with_severity :info, 'Exiting...'
+      Thread.new { log_with_severity :info, 'Exiting...' }.join
       @shutdown = true
     end
 
@@ -457,11 +457,11 @@ module Resque
     # is processing will not be completed.
     def kill_child
       if @child
-        log_with_severity :debug, "Killing child at #{@child}"
+        Thread.new { log_with_severity :debug, "Killing child at #{@child}" }.join
         if `ps -o pid,state -p #{@child}`
           Process.kill("KILL", @child) rescue nil
         else
-          log_with_severity :debug, "Child #{@child} not found, restarting."
+          Thread.new { log_with_severity :debug, "Child #{@child} not found, restarting." }.join
           shutdown
         end
       end
@@ -515,20 +515,20 @@ module Resque
     def new_kill_child
       if @child
         unless Process.waitpid(@child, Process::WNOHANG)
-          log_with_severity :debug, "Sending TERM signal to child #{@child}"
+          Thread.new { log_with_severity :debug, "Sending TERM signal to child #{@child}" }.join
           Process.kill("TERM", @child)
           (term_timeout.to_f * 10).round.times do |i|
             sleep(0.1)
             return if Process.waitpid(@child, Process::WNOHANG)
           end
-          log_with_severity :debug, "Sending KILL signal to child #{@child}"
+          Thread.new { log_with_severity :debug, "Sending KILL signal to child #{@child}" }.join
           Process.kill("KILL", @child)
         else
-          log_with_severity :debug, "Child #{@child} already quit."
+          Thread.new { log_with_severity :debug, "Child #{@child} already quit." }.join
         end
       end
     rescue SystemCallError
-      log_with_severity :error, "Child #{@child} already quit and reaped."
+      Thread.new { log_with_severity :error, "Child #{@child} already quit and reaped." }.join
     end
 
     # are we paused?
@@ -539,14 +539,14 @@ module Resque
     # Stop processing jobs after the current one has completed (if we're
     # currently running one).
     def pause_processing
-      log_with_severity :info, "USR2 received; pausing job processing"
+      Thread.new { log_with_severity :info, "USR2 received; pausing job processing" }.join
       run_hook :before_pause, self
       @paused = true
     end
 
     # Start processing jobs again after a pause
     def unpause_processing
-      log_with_severity :info, "CONT received; resuming job processing"
+      Thread.new { log_with_severity :info, "CONT received; resuming job processing" }.join
       @paused = false
       run_hook :after_pause, self
     end
