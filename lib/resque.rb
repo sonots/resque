@@ -18,6 +18,7 @@ require 'resque/log_formatters/very_verbose_formatter'
 require 'resque/job'
 require 'resque/worker'
 require 'resque/plugin'
+require 'resque/signal_trap'
 
 require 'resque/vendor/utf8_util'
 
